@@ -8,8 +8,9 @@ layers, KV caching, quantization, benchmarking, and memory optimization.
 
 ## Current Status
 
-The repository currently contains the CMake project foundation, command-line
-executable, and smoke-test infrastructure.
+The runtime currently provides a CMake-based C++20 foundation and an owning
+FP32 tensor type with contiguous storage, shape validation, row-major
+multidimensional indexing, and bounds-checked access.
 
 ## Planned Features
 

@@ -33,6 +33,23 @@ else()
     )
 endif()
 
+add_library(
+    edge_llm
+    src/tensor.cpp
+)
+
+target_link_libraries(
+    edge_llm
+    PUBLIC
+    edge_llm_options
+)
+
+target_include_directories(
+    edge_llm
+    PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+)
+
 add_executable(
     edge_llm_cli
     apps/main.cpp
@@ -41,13 +58,7 @@ add_executable(
 target_link_libraries(
     edge_llm_cli
     PRIVATE
-    edge_llm_options
-)
-
-target_include_directories(
-    edge_llm_cli
-    PRIVATE
-    ${PROJECT_SOURCE_DIR}/include
+    edge_llm
 )
 
 include(CTest)
@@ -61,17 +72,27 @@ if(BUILD_TESTING AND EDGE_LLM_BUILD_TESTS)
     target_link_libraries(
         edge_llm_smoke_test
         PRIVATE
-        edge_llm_options
-    )
-
-    target_include_directories(
-        edge_llm_smoke_test
-        PRIVATE
-        ${PROJECT_SOURCE_DIR}/include
+        edge_llm
     )
 
     add_test(
         NAME edge_llm_smoke_test
         COMMAND edge_llm_smoke_test
+    )
+
+    add_executable(
+        edge_llm_tensor_test
+        tests/tensor_test.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_tensor_test
+        PRIVATE
+        edge_llm
+    )
+
+    add_test(
+        NAME edge_llm_tensor_test
+        COMMAND edge_llm_tensor_test
     )
 endif()
