@@ -8,9 +8,10 @@ layers, KV caching, quantization, benchmarking, and memory optimization.
 
 ## Current Status
 
-The runtime currently provides a CMake-based C++20 foundation and an owning
-FP32 tensor type with contiguous storage, shape validation, row-major
-multidimensional indexing, and bounds-checked access.
+The runtime currently provides a CMake-based C++20 foundation, an owning FP32
+tensor type with contiguous storage and checked indexing, and core CPU tensor
+operations including element-wise addition, element-wise multiplication, and
+2D matrix multiplication.
 
 ## Planned Features
 

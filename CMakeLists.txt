@@ -7,9 +7,16 @@ project(
     LANGUAGES CXX
 )
 
-option(EDGE_LLM_BUILD_TESTS "Build Edge LLM Runtime tests" ON)
+option(
+    EDGE_LLM_BUILD_TESTS
+    "Build Edge LLM Runtime tests"
+    ON
+)
 
-add_library(edge_llm_options INTERFACE)
+add_library(
+    edge_llm_options
+    INTERFACE
+)
 
 target_compile_features(
     edge_llm_options
@@ -35,6 +42,7 @@ endif()
 
 add_library(
     edge_llm
+    src/ops.cpp
     src/tensor.cpp
 )
 
@@ -94,5 +102,21 @@ if(BUILD_TESTING AND EDGE_LLM_BUILD_TESTS)
     add_test(
         NAME edge_llm_tensor_test
         COMMAND edge_llm_tensor_test
+    )
+
+    add_executable(
+        edge_llm_ops_test
+        tests/ops_test.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_ops_test
+        PRIVATE
+        edge_llm
+    )
+
+    add_test(
+        NAME edge_llm_ops_test
+        COMMAND edge_llm_ops_test
     )
 endif()
