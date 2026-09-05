@@ -42,6 +42,7 @@ endif()
 
 add_library(
     edge_llm
+    src/nn.cpp
     src/ops.cpp
     src/tensor.cpp
 )
@@ -118,5 +119,21 @@ if(BUILD_TESTING AND EDGE_LLM_BUILD_TESTS)
     add_test(
         NAME edge_llm_ops_test
         COMMAND edge_llm_ops_test
+    )
+
+        add_executable(
+        edge_llm_nn_test
+        tests/nn_test.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_nn_test
+        PRIVATE
+        edge_llm
+    )
+
+    add_test(
+        NAME edge_llm_nn_test
+        COMMAND edge_llm_nn_test
     )
 endif()
