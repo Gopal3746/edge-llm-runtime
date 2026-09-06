@@ -8,10 +8,10 @@ layers, KV caching, quantization, benchmarking, and memory optimization.
 
 ## Current Status
 
-The runtime currently provides a CMake-based C++20 foundation, an owning FP32
-tensor type with contiguous storage and checked indexing, core tensor
-arithmetic, numerically stable softmax, and RMSNorm applied over the final
-tensor dimension.
+The runtime currently provides a CMake-based C++20 foundation, contiguous FP32
+tensors with checked indexing, core tensor arithmetic, RMSNorm, numerically
+stable softmax, token embeddings, and bias-free linear projections using the
+weight layout employed by transformer models.
 
 ## Planned Features
 
