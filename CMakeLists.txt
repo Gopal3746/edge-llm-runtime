@@ -45,6 +45,7 @@ add_library(
     src/layers.cpp
     src/nn.cpp
     src/ops.cpp
+    src/rope.cpp
     src/tensor.cpp
 )
 
@@ -152,5 +153,21 @@ if(BUILD_TESTING AND EDGE_LLM_BUILD_TESTS)
     add_test(
         NAME edge_llm_layers_test
         COMMAND edge_llm_layers_test
+    )
+
+        add_executable(
+        edge_llm_rope_test
+        tests/rope_test.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_rope_test
+        PRIVATE
+        edge_llm
+    )
+
+    add_test(
+        NAME edge_llm_rope_test
+        COMMAND edge_llm_rope_test
     )
 endif()
