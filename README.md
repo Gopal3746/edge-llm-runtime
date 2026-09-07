@@ -8,10 +8,11 @@ layers, KV caching, quantization, benchmarking, and memory optimization.
 
 ## Current Status
 
-The runtime currently provides contiguous FP32 tensors, checked tensor
-arithmetic, RMSNorm, numerically stable softmax, token embeddings, linear
-projections, and rotary positional embeddings for rank-3 multi-head attention
-tensors. RoPE supports position offsets for future KV-cached decoding.
+The runtime now includes contiguous FP32 tensors, core tensor operations,
+RMSNorm, stable softmax, embeddings, linear projections, RoPE, and uncached
+multi-head causal self-attention. Attention performs Q/K/V projection,
+scaled dot-product scoring, causal masking, value aggregation, and output
+projection entirely in C++.
 
 ## Planned Features
 
