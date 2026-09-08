@@ -9,10 +9,9 @@ layers, KV caching, quantization, benchmarking, and memory optimization.
 ## Current Status
 
 The runtime now includes contiguous FP32 tensors, core tensor operations,
-RMSNorm, stable softmax, embeddings, linear projections, RoPE, and uncached
-multi-head causal self-attention. Attention performs Q/K/V projection,
-scaled dot-product scoring, causal masking, value aggregation, and output
-projection entirely in C++.
+RMSNorm, embeddings, linear projections, RoPE, causal multi-head attention,
+a SwiGLU feed-forward network, and a complete pre-norm transformer block with
+attention and feed-forward residual connections.
 
 ## Planned Features
 

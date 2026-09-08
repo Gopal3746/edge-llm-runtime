@@ -43,11 +43,13 @@ endif()
 add_library(
     edge_llm
     src/attention.cpp
+    src/feed_forward.cpp
     src/layers.cpp
     src/nn.cpp
     src/ops.cpp
     src/rope.cpp
     src/tensor.cpp
+    src/transformer.cpp
 )
 
 target_link_libraries(
@@ -185,5 +187,21 @@ if(BUILD_TESTING AND EDGE_LLM_BUILD_TESTS)
     add_test(
         NAME edge_llm_attention_test
         COMMAND edge_llm_attention_test
+    )
+
+        add_executable(
+        edge_llm_transformer_test
+        tests/transformer_test.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_transformer_test
+        PRIVATE
+        edge_llm
+    )
+
+    add_test(
+        NAME edge_llm_transformer_test
+        COMMAND edge_llm_transformer_test
     )
 endif()
