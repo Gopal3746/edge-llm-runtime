@@ -8,10 +8,11 @@ layers, KV caching, quantization, benchmarking, and memory optimization.
 
 ## Current Status
 
-The runtime now includes contiguous FP32 tensors, core tensor operations,
-RMSNorm, embeddings, linear projections, RoPE, causal multi-head attention,
-a SwiGLU feed-forward network, and a complete pre-norm transformer block with
-attention and feed-forward residual connections.
+The runtime now provides an end-to-end decoder-only transformer inference
+path: token embedding, stacked pre-norm transformer blocks, final RMSNorm,
+vocabulary projection, and greedy autoregressive generation. The baseline
+generation path recomputes the full sequence before each token so cached
+decoding can later be validated against it.
 
 ## Planned Features
 
