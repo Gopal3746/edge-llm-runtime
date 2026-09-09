@@ -8,11 +8,11 @@ layers, KV caching, quantization, benchmarking, and memory optimization.
 
 ## Current Status
 
-The runtime provides an end-to-end decoder-only transformer inference path
-with greedy generation. It now also includes fixed-capacity per-layer KV-cache
-storage that preallocates contiguous key and value buffers, supports validated
-multi-token appends, and resets logical state without reallocating memory.
-Cached attention integration is the next milestone.
+The runtime now supports uncached causal attention and KV-cached attention
+through separate prefill and single-token decode paths. Prefill projects and
+caches the prompt's rotated keys and values, while decode projects only the
+new token and attends it against all cached history. Cached outputs are tested
+for numerical agreement with full-sequence uncached attention.
 
 ## Planned Features
 
