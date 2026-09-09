@@ -8,11 +8,11 @@ layers, KV caching, quantization, benchmarking, and memory optimization.
 
 ## Current Status
 
-The runtime now provides an end-to-end decoder-only transformer inference
-path: token embedding, stacked pre-norm transformer blocks, final RMSNorm,
-vocabulary projection, and greedy autoregressive generation. The baseline
-generation path recomputes the full sequence before each token so cached
-decoding can later be validated against it.
+The runtime provides an end-to-end decoder-only transformer inference path
+with greedy generation. It now also includes fixed-capacity per-layer KV-cache
+storage that preallocates contiguous key and value buffers, supports validated
+multi-token appends, and resets logical state without reallocating memory.
+Cached attention integration is the next milestone.
 
 ## Planned Features
 
