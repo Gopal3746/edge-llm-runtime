@@ -3,8 +3,8 @@
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
-#include <string_view>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "edge_llm/nn.hpp"
@@ -78,9 +78,8 @@ TransformerBlock::TransformerBlock(
     );
 }
 
-Tensor TransformerBlock::forward(
-    const Tensor& input,
-    std::size_t position_offset
+void TransformerBlock::validate_input(
+    const Tensor& input
 ) const {
     if (
         input.rank() != 2 ||
@@ -91,20 +90,12 @@ Tensor TransformerBlock::forward(
             "[sequence, model dimension]"
         );
     }
+}
 
-    const Tensor normalized_attention_input =
-        rms_norm(
-            input,
-            attention_norm_weight_,
-            norm_epsilon_
-        );
-
-    const Tensor attention_output =
-        attention_.forward(
-            normalized_attention_input,
-            position_offset
-        );
-
+Tensor TransformerBlock::finish_block(
+    const Tensor& input,
+    const Tensor& attention_output
+) const {
     const Tensor attention_residual =
         add(input, attention_output);
 
@@ -126,6 +117,87 @@ Tensor TransformerBlock::forward(
     );
 }
 
+Tensor TransformerBlock::forward(
+    const Tensor& input,
+    std::size_t position_offset
+) const {
+    validate_input(input);
+
+    const Tensor normalized_attention_input =
+        rms_norm(
+            input,
+            attention_norm_weight_,
+            norm_epsilon_
+        );
+
+    const Tensor attention_output =
+        attention_.forward(
+            normalized_attention_input,
+            position_offset
+        );
+
+    return finish_block(
+        input,
+        attention_output
+    );
+}
+
+Tensor TransformerBlock::prefill(
+    const Tensor& input,
+    KVCache& cache
+) const {
+    validate_input(input);
+
+    const Tensor normalized_attention_input =
+        rms_norm(
+            input,
+            attention_norm_weight_,
+            norm_epsilon_
+        );
+
+    const Tensor attention_output =
+        attention_.prefill(
+            normalized_attention_input,
+            cache
+        );
+
+    return finish_block(
+        input,
+        attention_output
+    );
+}
+
+Tensor TransformerBlock::decode(
+    const Tensor& input,
+    KVCache& cache
+) const {
+    validate_input(input);
+
+    if (input.shape()[0] != 1) {
+        throw std::invalid_argument(
+            "Transformer decode input must contain exactly one token"
+        );
+    }
+
+    const Tensor normalized_attention_input =
+        rms_norm(
+            input,
+            attention_norm_weight_,
+            norm_epsilon_
+        );
+
+    const Tensor attention_output =
+        attention_.decode(
+            normalized_attention_input,
+            cache
+        );
+
+    return finish_block(
+        input,
+        attention_output
+    );
+}
+
 std::size_t
 TransformerBlock::model_dimension() const noexcept {
     return attention_.model_dimension();
@@ -134,6 +206,16 @@ TransformerBlock::model_dimension() const noexcept {
 std::size_t
 TransformerBlock::hidden_dimension() const noexcept {
     return feed_forward_.hidden_dimension();
+}
+
+std::size_t
+TransformerBlock::head_count() const noexcept {
+    return attention_.head_count();
+}
+
+std::size_t
+TransformerBlock::head_dimension() const noexcept {
+    return attention_.head_dimension();
 }
 
 }  // namespace edge_llm

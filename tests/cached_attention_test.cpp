@@ -197,7 +197,7 @@ int main() {
         [&attention, &prompt] {
             KVCache other_cache(4, 1, 2);
 
-            attention.prefill(prompt, other_cache);
+            (void)attention.prefill(prompt, other_cache);
 
             static_cast<void>(
                 attention.decode(prompt, other_cache)
@@ -224,7 +224,7 @@ int main() {
         [&attention, &prompt, &next_token] {
             KVCache full_cache(2, 1, 2);
 
-            attention.prefill(prompt, full_cache);
+            (void)attention.prefill(prompt, full_cache);
 
             static_cast<void>(
                 attention.decode(

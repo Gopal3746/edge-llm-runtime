@@ -254,4 +254,20 @@ if(BUILD_TESTING AND EDGE_LLM_BUILD_TESTS)
         NAME edge_llm_cached_attention_test
         COMMAND edge_llm_cached_attention_test
     )
+
+        add_executable(
+        edge_llm_cached_transformer_test
+        tests/cached_transformer_test.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_cached_transformer_test
+        PRIVATE
+        edge_llm
+    )
+
+    add_test(
+        NAME edge_llm_cached_transformer_test
+        COMMAND edge_llm_cached_transformer_test
+    )
 endif()
