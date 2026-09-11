@@ -49,6 +49,7 @@ add_library(
     src/model.cpp
     src/nn.cpp
     src/ops.cpp
+    src/quantization.cpp
     src/rope.cpp
     src/tensor.cpp
     src/transformer.cpp
@@ -285,5 +286,21 @@ if(BUILD_TESTING AND EDGE_LLM_BUILD_TESTS)
     add_test(
         NAME edge_llm_cached_model_test
         COMMAND edge_llm_cached_model_test
+    )
+
+        add_executable(
+        edge_llm_quantization_test
+        tests/quantization_test.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_quantization_test
+        PRIVATE
+        edge_llm
+    )
+
+    add_test(
+        NAME edge_llm_quantization_test
+        COMMAND edge_llm_quantization_test
     )
 endif()
