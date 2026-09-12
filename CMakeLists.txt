@@ -13,6 +13,17 @@ option(
     ON
 )
 
+option(
+    EDGE_LLM_BUILD_BENCHMARKS
+    "Build Edge LLM Runtime benchmarks"
+    ON
+)
+
+set(
+    CMAKE_CXX_EXTENSIONS
+    OFF
+)
+
 add_library(
     edge_llm_options
     INTERFACE
@@ -78,229 +89,107 @@ target_link_libraries(
     edge_llm
 )
 
+if(EDGE_LLM_BUILD_BENCHMARKS)
+    add_executable(
+        edge_llm_benchmark
+        benchmarks/benchmark.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_benchmark
+        PRIVATE
+        edge_llm
+    )
+endif()
+
 include(CTest)
 
 if(BUILD_TESTING AND EDGE_LLM_BUILD_TESTS)
-    add_executable(
+    function(edge_llm_add_test target_name source_file)
+        add_executable(
+            ${target_name}
+            ${source_file}
+        )
+
+        target_link_libraries(
+            ${target_name}
+            PRIVATE
+            edge_llm
+        )
+
+        add_test(
+            NAME ${target_name}
+            COMMAND ${target_name}
+        )
+    endfunction()
+
+    edge_llm_add_test(
         edge_llm_smoke_test
         tests/smoke_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_smoke_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_smoke_test
-        COMMAND edge_llm_smoke_test
-    )
-
-    add_executable(
+    edge_llm_add_test(
         edge_llm_tensor_test
         tests/tensor_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_tensor_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_tensor_test
-        COMMAND edge_llm_tensor_test
-    )
-
-    add_executable(
+    edge_llm_add_test(
         edge_llm_ops_test
         tests/ops_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_ops_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_ops_test
-        COMMAND edge_llm_ops_test
-    )
-
-    add_executable(
+    edge_llm_add_test(
         edge_llm_nn_test
         tests/nn_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_nn_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_nn_test
-        COMMAND edge_llm_nn_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_layers_test
         tests/layers_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_layers_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_layers_test
-        COMMAND edge_llm_layers_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_rope_test
         tests/rope_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_rope_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_rope_test
-        COMMAND edge_llm_rope_test
-    )
-        add_executable(
+    edge_llm_add_test(
         edge_llm_attention_test
         tests/attention_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_attention_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_attention_test
-        COMMAND edge_llm_attention_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_transformer_test
         tests/transformer_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_transformer_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_transformer_test
-        COMMAND edge_llm_transformer_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_model_test
         tests/model_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_model_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_model_test
-        COMMAND edge_llm_model_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_kv_cache_test
         tests/kv_cache_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_kv_cache_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_kv_cache_test
-        COMMAND edge_llm_kv_cache_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_cached_attention_test
         tests/cached_attention_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_cached_attention_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_cached_attention_test
-        COMMAND edge_llm_cached_attention_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_cached_transformer_test
         tests/cached_transformer_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_cached_transformer_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_cached_transformer_test
-        COMMAND edge_llm_cached_transformer_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_cached_model_test
         tests/cached_model_test.cpp
     )
 
-    target_link_libraries(
-        edge_llm_cached_model_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_cached_model_test
-        COMMAND edge_llm_cached_model_test
-    )
-
-        add_executable(
+    edge_llm_add_test(
         edge_llm_quantization_test
         tests/quantization_test.cpp
-    )
-
-    target_link_libraries(
-        edge_llm_quantization_test
-        PRIVATE
-        edge_llm
-    )
-
-    add_test(
-        NAME edge_llm_quantization_test
-        COMMAND edge_llm_quantization_test
     )
 endif()
