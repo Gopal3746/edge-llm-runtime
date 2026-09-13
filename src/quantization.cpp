@@ -118,7 +118,7 @@ QuantizedLinear::QuantizedLinear(
     }
 }
 
-Tensor QuantizedLinear::forward(
+void QuantizedLinear::validate_input(
     const Tensor& input
 ) const {
     if (
@@ -130,14 +130,57 @@ Tensor QuantizedLinear::forward(
             "[rows, input features]"
         );
     }
+}
+
+void QuantizedLinear::validate_output(
+    const Tensor& input,
+    const Tensor& output
+) const {
+    if (
+        output.rank() != 2 ||
+        output.shape()[0] != input.shape()[0] ||
+        output.shape()[1] != output_features_
+    ) {
+        throw std::invalid_argument(
+            "Quantized linear output must have shape "
+            "[rows, output features]"
+        );
+    }
+
+    if (input.data() == output.data()) {
+        throw std::invalid_argument(
+            "Quantized linear input and output must not alias"
+        );
+    }
+}
+
+Tensor QuantizedLinear::forward(
+    const Tensor& input
+) const {
+    validate_input(input);
+
+    Tensor output({
+        input.shape()[0],
+        output_features_
+    });
+
+    forward_into(
+        input,
+        output
+    );
+
+    return output;
+}
+
+void QuantizedLinear::forward_into(
+    const Tensor& input,
+    Tensor& output
+) const {
+    validate_input(input);
+    validate_output(input, output);
 
     const std::size_t row_count =
         input.shape()[0];
-
-    Tensor output({
-        row_count,
-        output_features_
-    });
 
     for (
         std::size_t row = 0;
@@ -164,10 +207,8 @@ Tensor QuantizedLinear::forward(
                     input_feature;
 
                 const std::size_t weight_index =
-                    weight_offset(
-                        output_feature,
-                        input_feature
-                    );
+                    output_feature * input_features_ +
+                    input_feature;
 
                 const float dequantized_weight =
                     static_cast<float>(
@@ -185,8 +226,6 @@ Tensor QuantizedLinear::forward(
             ) = accumulator;
         }
     }
-
-    return output;
 }
 
 Tensor QuantizedLinear::dequantized_weight() const {
@@ -206,7 +245,7 @@ Tensor QuantizedLinear::dequantized_weight() const {
             ++input
         ) {
             const std::size_t offset =
-                weight_offset(output, input);
+                output * input_features_ + input;
 
             weight.at(offset) =
                 static_cast<float>(

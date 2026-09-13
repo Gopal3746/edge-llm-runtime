@@ -157,6 +157,34 @@ int main() {
     const Tensor quantized_output =
         quantized_linear.forward(input);
 
+    Tensor reusable_output(
+        {2, 3}
+    );
+
+    quantized_linear.forward_into(
+        input,
+        reusable_output
+    );
+
+    expect_near_tensor(
+        reusable_output,
+        quantized_output,
+        1.0e-6F,
+        "Reusable output should match allocating quantized execution"
+    );
+
+    quantized_linear.forward_into(
+        input,
+        reusable_output
+    );
+
+    expect_near_tensor(
+        reusable_output,
+        quantized_output,
+        1.0e-6F,
+        "Repeated reusable execution should overwrite the output correctly"
+    );
+
     expect_near_tensor(
         quantized_output,
         float_output,
@@ -243,6 +271,50 @@ int main() {
             );
         },
         "Quantized weight lookup should validate indices"
+    );
+
+    expect_throws<std::invalid_argument>(
+        [&quantized_linear, &input] {
+            Tensor incorrectly_shaped_output(
+                {2, 2}
+            );
+
+            quantized_linear.forward_into(
+                input,
+                incorrectly_shaped_output
+            );
+        },
+        "Reusable execution should validate output shape"
+    );
+
+    expect_throws<std::invalid_argument>(
+        [] {
+            const Tensor square_weight(
+                {2, 2},
+                {
+                    1.0F, 0.0F,
+                    0.0F, 1.0F
+                }
+            );
+
+            const QuantizedLinear square_linear(
+                square_weight
+            );
+
+            Tensor aliased_tensor(
+                {1, 2},
+                {
+                    1.0F,
+                    2.0F
+                }
+            );
+
+            square_linear.forward_into(
+                aliased_tensor,
+                aliased_tensor
+            );
+        },
+        "Reusable execution should reject aliased input and output"
     );
 
     if (failure_count != 0) {

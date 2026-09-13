@@ -100,6 +100,17 @@ if(EDGE_LLM_BUILD_BENCHMARKS)
         PRIVATE
         edge_llm
     )
+
+    add_executable(
+        edge_llm_buffer_reuse_benchmark
+        benchmarks/buffer_reuse_benchmark.cpp
+    )
+
+    target_link_libraries(
+        edge_llm_buffer_reuse_benchmark
+        PRIVATE
+        edge_llm
+    )
 endif()
 
 include(CTest)

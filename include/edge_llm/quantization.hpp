@@ -18,6 +18,11 @@ public:
         const Tensor& input
     ) const;
 
+    void forward_into(
+        const Tensor& input,
+        Tensor& output
+    ) const;
+
     [[nodiscard]] Tensor dequantized_weight() const;
 
     [[nodiscard]] std::size_t input_features() const noexcept;
@@ -38,6 +43,15 @@ public:
     ) const;
 
 private:
+    void validate_input(
+        const Tensor& input
+    ) const;
+
+    void validate_output(
+        const Tensor& input,
+        const Tensor& output
+    ) const;
+
     [[nodiscard]] std::size_t weight_offset(
         std::size_t output_row,
         std::size_t input_column
