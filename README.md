@@ -275,6 +275,35 @@ The final engineering milestone will add:
 - Sanitizer-enabled development builds
 - Final repository and documentation cleanup
 
+### Linux profiler-driven optimization
+
+A sustained Callgrind profile identified repeated shape lookups and checked
+tensor access inside the FP32 and INT8 linear hot loops. Replacing those
+operations with validated contiguous-buffer traversal reduced total dynamic
+instructions from 3.731 billion to 1.556 billion.
+
+| Metric | Before | After |
+|---|---:|---:|
+| FP32 linear mean latency | 7.6888 ms | 2.0663 ms |
+| INT8 linear mean latency | 7.7618 ms | 2.0696 ms |
+| Uncached generation mean latency | 12.3583 ms | 4.0304 ms |
+| Cached generation mean latency | 1.8444 ms | 0.6078 ms |
+| Cached decode latency/token | 0.0827 ms | 0.0298 ms |
+| Dynamic instructions | 3.731 billion | 1.556 billion |
+
+The optimization reduced dynamic instructions by 58.3% and observed linear
+kernel latency by approximately 73%, while preserving the benchmark checksum
+and INT8 numerical error. Wall-clock measurements were collected on separate
+GitHub-hosted runners, so the Callgrind instruction-count reduction is the
+strongest reproducible evidence.
+
+The optimized Linux benchmark produced a 6.63x KV-cache generation speedup.
+Weight-only INT8 reduced weight storage by 74.6%, while FP32 and INT8 execution
+latency were effectively equal on Linux.
+
+See [`docs/profiling.md`](docs/profiling.md) for the complete methodology,
+results, interpretation, and limitations.
+
 ## License
 
 This project is licensed under the MIT License.
