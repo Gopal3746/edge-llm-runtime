@@ -22,12 +22,14 @@ void validate_float_weight(
         );
     }
 
+    const float* weight_data = weight.data();
+
     for (
         std::size_t index = 0;
         index < weight.size();
         ++index
     ) {
-        if (!std::isfinite(weight.at(index))) {
+        if (!std::isfinite(weight_data[index])) {
             throw std::invalid_argument(
                 "Quantized linear weight values must be finite"
             );
@@ -57,11 +59,28 @@ QuantizedLinear::QuantizedLinear(
         output_features_
     );
 
+    const float* float_weight_data =
+        float_weight.data();
+
+    std::int8_t* quantized_weight_data =
+        quantized_weights_.data();
+
+    float* scale_data =
+        scales_.data();
+
     for (
         std::size_t output = 0;
         output < output_features_;
         ++output
     ) {
+        const float* float_weight_row =
+            float_weight_data +
+            output * input_features_;
+
+        std::int8_t* quantized_weight_row =
+            quantized_weight_data +
+            output * input_features_;
+
         float maximum_absolute_value = 0.0F;
 
         for (
@@ -69,15 +88,10 @@ QuantizedLinear::QuantizedLinear(
             input < input_features_;
             ++input
         ) {
-            const float value =
-                float_weight.at(
-                    output * input_features_ + input
-                );
-
             maximum_absolute_value =
                 std::max(
                     maximum_absolute_value,
-                    std::fabs(value)
+                    std::fabs(float_weight_row[input])
                 );
         }
 
@@ -87,18 +101,15 @@ QuantizedLinear::QuantizedLinear(
                 : maximum_absolute_value /
                     maximum_quantized_value;
 
-        scales_[output] = scale;
+        scale_data[output] = scale;
 
         for (
             std::size_t input = 0;
             input < input_features_;
             ++input
         ) {
-            const std::size_t offset =
-                output * input_features_ + input;
-
             const float scaled_value =
-                float_weight.at(offset) / scale;
+                float_weight_row[input] / scale;
 
             const long rounded_value =
                 std::lround(scaled_value);
@@ -110,7 +121,7 @@ QuantizedLinear::QuantizedLinear(
                     127L
                 );
 
-            quantized_weights_[offset] =
+            quantized_weight_row[input] =
                 static_cast<std::int8_t>(
                     clamped_value
                 );
@@ -182,48 +193,55 @@ void QuantizedLinear::forward_into(
     const std::size_t row_count =
         input.shape()[0];
 
+    const float* input_data =
+        input.data();
+
+    float* output_data =
+        output.data();
+
+    const std::int8_t* quantized_weight_data =
+        quantized_weights_.data();
+
+    const float* scale_data =
+        scales_.data();
+
     for (
         std::size_t row = 0;
         row < row_count;
         ++row
     ) {
+        const float* input_row =
+            input_data + row * input_features_;
+
+        float* output_row =
+            output_data + row * output_features_;
+
         for (
             std::size_t output_feature = 0;
             output_feature < output_features_;
             ++output_feature
         ) {
-            float accumulator = 0.0F;
+            const std::int8_t* weight_row =
+                quantized_weight_data +
+                output_feature * input_features_;
 
-            const float scale =
-                scales_[output_feature];
+            float dot_product = 0.0F;
 
             for (
                 std::size_t input_feature = 0;
                 input_feature < input_features_;
                 ++input_feature
             ) {
-                const std::size_t input_offset =
-                    row * input_features_ +
-                    input_feature;
-
-                const std::size_t weight_index =
-                    output_feature * input_features_ +
-                    input_feature;
-
-                const float dequantized_weight =
+                dot_product +=
+                    input_row[input_feature] *
                     static_cast<float>(
-                        quantized_weights_[weight_index]
-                    ) * scale;
-
-                accumulator +=
-                    input.at(input_offset) *
-                    dequantized_weight;
+                        weight_row[input_feature]
+                    );
             }
 
-            output.at(
-                row * output_features_ +
-                output_feature
-            ) = accumulator;
+            output_row[output_feature] =
+                dot_product *
+                scale_data[output_feature];
         }
     }
 }
@@ -234,23 +252,40 @@ Tensor QuantizedLinear::dequantized_weight() const {
         input_features_
     });
 
+    float* output_data =
+        weight.data();
+
+    const std::int8_t* quantized_weight_data =
+        quantized_weights_.data();
+
+    const float* scale_data =
+        scales_.data();
+
     for (
         std::size_t output = 0;
         output < output_features_;
         ++output
     ) {
+        float* output_row =
+            output_data +
+            output * input_features_;
+
+        const std::int8_t* quantized_row =
+            quantized_weight_data +
+            output * input_features_;
+
+        const float scale =
+            scale_data[output];
+
         for (
             std::size_t input = 0;
             input < input_features_;
             ++input
         ) {
-            const std::size_t offset =
-                output * input_features_ + input;
-
-            weight.at(offset) =
+            output_row[input] =
                 static_cast<float>(
-                    quantized_weights_[offset]
-                ) * scales_[output];
+                    quantized_row[input]
+                ) * scale;
         }
     }
 

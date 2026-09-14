@@ -25,6 +25,9 @@ Tensor Embedding::forward(
         );
     }
 
+    const std::size_t vocabulary =
+        vocabulary_size();
+
     const std::size_t dimension =
         embedding_dimension();
 
@@ -44,7 +47,7 @@ Tensor Embedding::forward(
         const std::size_t token_id =
             token_ids[token_index];
 
-        if (token_id >= vocabulary_size()) {
+        if (token_id >= vocabulary) {
             throw std::out_of_range(
                 "Token ID is outside the embedding vocabulary"
             );
@@ -70,7 +73,8 @@ std::size_t Embedding::vocabulary_size() const noexcept {
     return weight_.shape()[0];
 }
 
-std::size_t Embedding::embedding_dimension() const noexcept {
+std::size_t
+Embedding::embedding_dimension() const noexcept {
     return weight_.shape()[1];
 }
 
@@ -102,7 +106,13 @@ Tensor Linear::forward(
     const std::size_t provided_features =
         input.shape()[1];
 
-    if (provided_features != input_features()) {
+    const std::size_t input_feature_count =
+        input_features();
+
+    const std::size_t output_feature_count =
+        output_features();
+
+    if (provided_features != input_feature_count) {
         throw std::invalid_argument(
             "Linear input size does not match its weight"
         );
@@ -110,7 +120,7 @@ Tensor Linear::forward(
 
     Tensor output({
         row_count,
-        output_features()
+        output_feature_count
     });
 
     const float* input_data = input.data();
@@ -123,22 +133,25 @@ Tensor Linear::forward(
         ++row
     ) {
         const float* input_row =
-            input_data + row * input_features();
+            input_data + row * input_feature_count;
+
+        float* output_row =
+            output_data + row * output_feature_count;
 
         for (
             std::size_t output_index = 0;
-            output_index < output_features();
+            output_index < output_feature_count;
             ++output_index
         ) {
             const float* weight_row =
                 weight_data +
-                output_index * input_features();
+                output_index * input_feature_count;
 
             double sum = 0.0;
 
             for (
                 std::size_t input_index = 0;
-                input_index < input_features();
+                input_index < input_feature_count;
                 ++input_index
             ) {
                 sum +=
@@ -150,9 +163,8 @@ Tensor Linear::forward(
                     );
             }
 
-            output_data[
-                row * output_features() + output_index
-            ] = static_cast<float>(sum);
+            output_row[output_index] =
+                static_cast<float>(sum);
         }
     }
 
