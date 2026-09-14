@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }} / ${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+        build_type:
+          - Debug
+          - Release
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: >
+          cmake -S . -B out/ci
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DEDGE_LLM_BUILD_TESTS=ON
+          -DEDGE_LLM_BUILD_BENCHMARKS=ON
+          -DEDGE_LLM_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build out/ci --parallel 2
+
+      - name: Run tests
+        run: ctest --test-dir out/ci --output-on-failure
+
+      - name: Run benchmark smoke check
+        if: matrix.build_type == 'Release'
+        run: ./out/ci/edge_llm_benchmark > benchmark-smoke.txt
+
+  sanitizers:
+    name: Ubuntu / ASan and UBSan
+    runs-on: ubuntu-latest
+
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure sanitizer build
+        run: >
+          cmake -S . -B out/sanitize
+          -DCMAKE_BUILD_TYPE=Debug
+          -DEDGE_LLM_BUILD_TESTS=ON
+          -DEDGE_LLM_BUILD_BENCHMARKS=OFF
+          -DEDGE_LLM_WARNINGS_AS_ERRORS=ON
+          -DEDGE_LLM_ENABLE_SANITIZERS=ON
+
+      - name: Build
+        run: cmake --build out/sanitize --parallel 2
+
+      - name: Run sanitizer tests
+        run: ctest --test-dir out/sanitize --output-on-failure

@@ -1,0 +1,66 @@
+name: Linux Profiling
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    name: Profile on Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install profiling tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y time valgrind
+
+      - name: Configure profiling build
+        run: >
+          cmake -S . -B out/profile
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DEDGE_LLM_BUILD_TESTS=ON
+          -DEDGE_LLM_BUILD_BENCHMARKS=ON
+          -DEDGE_LLM_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build out/profile --parallel 2
+
+      - name: Run tests
+        run: ctest --test-dir out/profile --output-on-failure
+
+      - name: Collect time and memory metrics
+        run: |
+          mkdir -p results/profiling
+          /usr/bin/time -v \
+            ./out/profile/edge_llm_benchmark \
+            > results/profiling/benchmark_output.txt \
+            2> results/profiling/time_report.txt
+
+      - name: Collect Callgrind profile
+        run: |
+          valgrind \
+            --tool=callgrind \
+            --callgrind-out-file=results/profiling/callgrind.out \
+            ./out/profile/edge_llm_cached_model_test \
+            > results/profiling/callgrind_program_output.txt \
+            2> results/profiling/callgrind_log.txt
+
+          callgrind_annotate \
+            --inclusive=yes \
+            --auto=yes \
+            results/profiling/callgrind.out \
+            > results/profiling/callgrind_report.txt
+
+      - name: Upload profiling results
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-profiling-results
+          path: results/profiling/
+          retention-days: 14

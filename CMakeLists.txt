@@ -19,10 +19,24 @@ option(
     ON
 )
 
-set(
-    CMAKE_CXX_EXTENSIONS
+option(
+    EDGE_LLM_WARNINGS_AS_ERRORS
+    "Treat compiler warnings as errors"
     OFF
 )
+
+option(
+    EDGE_LLM_ENABLE_SANITIZERS
+    "Enable AddressSanitizer and UndefinedBehaviorSanitizer"
+    OFF
+)
+
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# -----------------------------------------------------------------------------
+# Shared compiler options
+# -----------------------------------------------------------------------------
 
 add_library(
     edge_llm_options
@@ -51,6 +65,54 @@ else()
     )
 endif()
 
+if(EDGE_LLM_WARNINGS_AS_ERRORS)
+    if(MSVC)
+        target_compile_options(
+            edge_llm_options
+            INTERFACE
+            /WX
+        )
+    else()
+        target_compile_options(
+            edge_llm_options
+            INTERFACE
+            -Werror
+        )
+    endif()
+endif()
+
+if(EDGE_LLM_ENABLE_SANITIZERS)
+    if(MSVC)
+        message(
+            FATAL_ERROR
+            "EDGE_LLM_ENABLE_SANITIZERS is not supported with MSVC"
+        )
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(
+            edge_llm_options
+            INTERFACE
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer
+        )
+
+        target_link_options(
+            edge_llm_options
+            INTERFACE
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer
+        )
+    else()
+        message(
+            FATAL_ERROR
+            "Sanitizers require Clang, AppleClang, or GCC"
+        )
+    endif()
+endif()
+
+# -----------------------------------------------------------------------------
+# Runtime library
+# -----------------------------------------------------------------------------
+
 add_library(
     edge_llm
     src/attention.cpp
@@ -78,6 +140,10 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/include
 )
 
+# -----------------------------------------------------------------------------
+# Command-line application
+# -----------------------------------------------------------------------------
+
 add_executable(
     edge_llm_cli
     apps/main.cpp
@@ -88,6 +154,10 @@ target_link_libraries(
     PRIVATE
     edge_llm
 )
+
+# -----------------------------------------------------------------------------
+# Benchmarks
+# -----------------------------------------------------------------------------
 
 if(EDGE_LLM_BUILD_BENCHMARKS)
     add_executable(
@@ -112,6 +182,10 @@ if(EDGE_LLM_BUILD_BENCHMARKS)
         edge_llm
     )
 endif()
+
+# -----------------------------------------------------------------------------
+# Tests
+# -----------------------------------------------------------------------------
 
 include(CTest)
 
